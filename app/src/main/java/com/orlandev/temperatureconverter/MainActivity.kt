@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuDefaults.textFieldColors
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,14 +42,26 @@ fun TemperatureTextField(
     temperature: MutableState<String>, modifier: Modifier = Modifier, callback: () -> Unit
 ) {
 
-    TextField(modifier = modifier,
+    TextField(
+        modifier = modifier,
         value = temperature.value,
+        placeholder = {
+            Text(
+                text = "0",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.headlineMedium
+            )
+        },
         onValueChange = { temperature.value = it },
         keyboardActions = KeyboardActions(onAny = { callback() }),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Number, imeAction = ImeAction.Done
         ),
-        singleLine = true
+        textStyle = MaterialTheme.typography.headlineMedium,
+        singleLine = true,
+        colors = textFieldColors(
+            textColor = MaterialTheme.colorScheme.primary, containerColor = Color.Transparent
+        )
     )
 }
 
@@ -106,33 +120,52 @@ fun TemperatureApp() {
     val result = remember(convertedTemperature) {
         if (convertedTemperature.isNaN()) ""
         else "${convertedTemperature}${
-            if (scale.value == R.string.celsius) "F"
-            else "C"
+            if (scale.value == R.string.celsius) " F"
+            else " C"
         }"
     }
 
     val enabled = temperature.value.isNotBlank()
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (result.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(0.6f), contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    modifier = Modifier.padding(8.dp),
+                    text = result,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.displayLarge
+                )
+            }
+        }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f)
+        ) {
+
+            TemperatureScaleButtonGroup(
+                selected = scale, modifier = Modifier.padding(bottom = 16.dp)
+            )
+            Spacer(modifier = Modifier.size(50.dp))
+
             TemperatureTextField(
                 temperature = temperature,
                 modifier = Modifier.padding(bottom = 16.dp),
                 callback = calc
             )
-            TemperatureScaleButtonGroup(
-                selected = scale, modifier = Modifier.padding(bottom = 16.dp)
-            )
+
             Button(
                 onClick = calc, enabled = enabled
             ) {
                 Text(text = stringResource(id = R.string.convert_text))
             }
-            if (result.isNotEmpty()) {
-                Text(
-                    text = result
-                )
-            }
+
         }
     }
 }
